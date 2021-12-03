@@ -14,13 +14,14 @@
       v-for="disk in disks"
       :key="disk.id"
     >
-    <div class="row padded-row">
-      <div class="col" />
-      <div class="col-md-3 align-self-center">
+      <div class="row padded-row">
+        <div class="col" />
+        <div class="col-md-3 align-self-center">
           <div class="input-group">
             <input
               v-model="disk.size"
               type="number"
+              step="any"
               class="form-control"
             >
             <span
@@ -35,7 +36,7 @@
             </button>
           </div>
         </div>
-      <div class="col" />
+        <div class="col" />
       </div>
     </div>
 
@@ -65,16 +66,16 @@
             >Unstable</span>
           </td>
           <td v-if="raid.usage">
-            {{ raid.usage[0]?.toFixed(1) }} TiB
+            {{ raid.usage[0] }} TiB
           </td>
           <td v-if="raid.usage">
-            {{ raid.usage[1]?.toFixed(1) }} TiB
+            {{ raid.usage[1] }} TiB
           </td>
           <td v-if="raid.usage">
-            {{ raid.usage[2]?.toFixed(1) }} TiB
+            {{ raid.usage[2] }} TiB
           </td>
           <td v-if="raid.usage">
-            {{ (raid.usage[0] / getTotalSize() * 100).toFixed(1) }}%
+            {{ (raid.usage[0] / getTotalSize() * 100)?.toFixed(0) }}%
           </td>
         </tr>
         <tr v-if="raid.usage">
@@ -108,6 +109,33 @@
         </tr>
       </tbody>
     </table>
+
+    <h2>Legend</h2>
+    <div class="progress">
+      <div
+        class="progress-bar bg-primary"
+        role="progressbar"
+        style="width: 33%"
+      >
+        Usable space
+      </div> 
+      <div
+        class="progress-bar bg-warning"
+        role="progressbar"
+        style="width: 33%"
+      >
+        Mirror/parity space
+      </div>
+      <div
+        class="progress-bar bg-danger"
+        role="progressbar"
+        style="width: 34%"
+      >
+        Unusable space
+      </div>
+    </div>
+
+    <hr>
 
     <h2>Notes</h2>
     <ul class="list-group list-group-flush">
@@ -174,23 +202,37 @@ export default class DiskCalculator extends Vue {
   getTotalSize(): number {
     let total = 0
     for (let disk of this.disks) {
-      total += disk.size;
+      if (typeof disk.size == "number") {
+        total += disk.size;
+      }
     }
     return total
+  }
+
+  getNumDisks(): number {
+    let count = 0
+    for (let disk of this.disks) {
+      if (typeof disk.size == "number") {
+        count++;
+      }
+    }
+    return count
   }
 
   diskSizes(): number[] {
     // Get a sorted list of the disk sizes
     let sizes = [];
     for (let d of this.disks) {
-      sizes.push(d.size);
+      if (typeof d.size == "number") {
+        sizes.push(d.size);
+      }
     }
     sizes.sort((a: number, b: number) => b - a)
     return sizes;
   }
 
   RAIDCalculation(extra_copies: number): number[] | null {
-    if (this.disks.length < extra_copies + 1) {
+    if (this.getNumDisks() < extra_copies + 1) {
       return null;
     }
     // find the smallest disk, and stripe that same space on the disks with the most available size
@@ -234,14 +276,14 @@ export default class DiskCalculator extends Vue {
   }
 
   get single(): number[] | null {
-    if (this.disks.length < 1) {
+    if (this.getNumDisks() < 1) {
       return null;
     }
     return [this.getTotalSize(), 0, 0];
   }
 
   get dup(): number[] | null {
-    if (this.disks.length < 1) {
+    if (this.getNumDisks() < 1) {
       return null;
     }
     return [this.getTotalSize() / 2, this.getTotalSize() / 2, 0];
