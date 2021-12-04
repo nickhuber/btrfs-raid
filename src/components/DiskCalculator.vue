@@ -21,6 +21,7 @@
             <input
               v-model="disk.size"
               type="number"
+              min="0"
               step="any"
               class="form-control"
             >
@@ -66,13 +67,13 @@
             >Unstable</span>
           </td>
           <td v-if="raid.usage">
-            {{ raid.usage[0] }} TiB
+            {{ raid.usage[0]?.toFixed(2) }} TiB
           </td>
           <td v-if="raid.usage">
-            {{ raid.usage[1] }} TiB
+            {{ raid.usage[1]?.toFixed(2) }} TiB
           </td>
           <td v-if="raid.usage">
-            {{ raid.usage[2] }} TiB
+            {{ raid.usage[2]?.toFixed(2) }} TiB
           </td>
           <td v-if="raid.usage">
             {{ (raid.usage[0] / getTotalSize() * 100)?.toFixed(0) }}%
@@ -84,18 +85,24 @@
               <div
                 class="progress-bar"
                 role="progressbar"
-                :style="{ width: `${raid.usage[0] / getTotalSize() * 100}%` }"
-              />
+                :style="{ width: `${ raid.usage[0] / getTotalSize() * 100}%` }"
+              >
+                {{ (raid.usage[0] / getTotalSize() * 100)?.toFixed(0) }}%
+              </div>
               <div
                 class="progress-bar bg-warning"
                 role="progressbar"
-                :style="{ width: `${raid.usage[1] / getTotalSize() * 100}%` }"
-              />
+                :style="{ width: `${ raid.usage[1] / getTotalSize() * 100}%` }"
+              >
+                {{ (raid.usage[1] / getTotalSize() * 100)?.toFixed(0) }}%
+              </div>
               <div
                 class="progress-bar bg-danger"
                 role="progressbar"
-                :style="{ width: `${raid.usage[2] / getTotalSize() * 100}%` }"
-              />
+                :style="{ width: `${ raid.usage[2] / getTotalSize() * 100}%` }"
+              >
+                {{ (raid.usage[2] / getTotalSize() * 100)?.toFixed(0) }}%
+              </div>
             </div>
           </td>
         </tr>
@@ -160,12 +167,20 @@ import { Vue } from 'vue-class-component';
 let _id: number = 0;
 
 class Disk {
-  size: number
+  _size: number
   id: number
 
   constructor(size: number) {
-    this.size = size;
+    this._size = size;
     this.id = _id++;
+  }
+
+  get size(): number {
+    return this._size;
+  }
+
+  set size(value: number) {
+    this._size = Math.abs(value);
   }
 }
 
@@ -289,7 +304,6 @@ export default class DiskCalculator extends Vue {
     return [this.getTotalSize() / 2, this.getTotalSize() / 2, 0];
   }
 
-
   get RAID1(): number[] | null {
     return this.RAIDCalculation(1);
   }
@@ -311,5 +325,9 @@ dfn {
 }
 .padded-row {
   padding-top: 1ex;
+}
+
+.progress-bar.bg-warning {
+  color: #2c3e50;
 }
 </style>
